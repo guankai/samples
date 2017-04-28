@@ -22,6 +22,9 @@ import (
 	"github.com/gorilla/websocket"
 
 	"samples/WebIM/models"
+	"github.com/astaxie/beego/httplib"
+	"fmt"
+	"samples/WebIM/util"
 )
 
 // WebSocketController handles WebSocket requests.
@@ -72,6 +75,17 @@ func (this *WebSocketController) Join() {
 			return
 		}
 		publish <- newEvent(models.EVENT_MESSAGE, uname, string(p))
+		if string(p) == "你好" || string(p) == "西安" {
+			ans, _ := util.GetAnswer(string(p))
+			beego.Debug(ans)
+			publish <- newEvent(models.EVENT_MESSAGE, `polly`, ans)
+		} else {
+			beego.Debug("enter the tuling")
+			ans, _ := SendToTuling(string(p))
+			beego.Debug(ans)
+			publish <- newEvent(models.EVENT_MESSAGE, `polly`, ans)
+		}
+
 	}
 }
 
@@ -93,4 +107,16 @@ func broadcastWebSocket(event models.Event) {
 			}
 		}
 	}
+}
+
+func SendToTuling(info string) (string, error) {
+	req := httplib.Post(beego.AppConfig.String("tuling::url"))
+	req.JSONBody(models.Tuling{Key:beego.AppConfig.String("tuling::apikey"), Info:info, Userid:`123123`})
+	body := fmt.Sprintf(`{"key":"%s","info":"%s","userid":"123123"}`, beego.AppConfig.String("tuling::apikey"), info)
+	beego.Debug("the body is ", body)
+	req.Body(body)
+	var tuling models.TulingRes
+	err := req.ToJSON(&tuling)
+	beego.Debug("the tuling is ",tuling)
+	return tuling.Text, err
 }

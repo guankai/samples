@@ -20,6 +20,7 @@ import (
 	"github.com/beego/i18n"
 
 	"samples/WebIM/controllers"
+	_ "samples/WebIM/util"
 )
 
 const (
